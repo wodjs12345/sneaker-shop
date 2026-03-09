@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DONE
+  CANCELLED
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  role             Role      @default(USER)
+  refreshToken     String?
+  refreshTokenExp  DateTime?
+  createdAt        DateTime  @default(now())
+
+  orders    Order[]
+  cart      Cart?
+  wishlists Wishlist[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Int
+  imageUrl    String
+  brand       String
+  createdAt   DateTime @default(now())
+
+  sizes      ProductSize[]
+  orderItems OrderItem[]
+  wishlists  Wishlist[]
+  cartItems  CartItem[]
+}
+
+model ProductSize {
+  id        String  @id @default(cuid())
+  productId String
+  size      String  // "240", "250", "260", "270", "280", "290", "300"
+  stock     Int     @default(0)
+
+  product    Product     @relation(fields: [productId], references: [id])
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  totalPrice    Int
+  status        OrderStatus @default(PENDING)
+  paymentKey    String?
+  paymentMethod String?
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id            String @id @default(cuid())
+  orderId       String
+  productId     String
+  productSizeId String
+  quantity      Int
+  price         Int
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+  productSize ProductSize @relation(fields: [productSizeId], references: [id])
+}
+
+model Cart {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  user      User       @relation(fields: [userId], references: [id])
+  cartItems CartItem[]
+}
+
+model CartItem {
+  id            String @id @default(cuid())
+  cartId        String
+  productId     String
+  productSizeId String
+  quantity      Int    @default(1)
+
+  cart        Cart        @relation(fields: [cartId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+  productSize ProductSize @relation(fields: [productSizeId], references: [id])
+}
+
+model Wishlist {
+  id        String @id @default(cuid())
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
