@@ -66,6 +66,7 @@ cd backend
 npm install
 cp .env.example .env  # 환경변수 설정
 npx prisma migrate dev
+npx prisma db seed  # 샘플 데이터 삽입 (상품 10개, 테스트 계정 생성)
 npm run dev
 ```
 
